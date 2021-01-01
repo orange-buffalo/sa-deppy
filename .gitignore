@@ -4,3 +4,5 @@ npm-debug.log
 !mock-cert.pem
 .env
 coverage
+.idea
+*service-key.json

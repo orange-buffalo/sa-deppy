@@ -1,19 +1,40 @@
+const {SaDeppy} = require('./src/sa-deppy');
+const commands = require('probot-commands');
+
 /**
- * This is the main entrypoint to your Probot app
- * @param {import('probot').Application} app
+ * @param {import('probot').Probot} bot
  */
-module.exports = app => {
-  // Your code here
-  app.log.info('Yay, the app was loaded!')
+module.exports = (bot) => {
+  bot.log.info('Bot is loaded, starting initialization')
 
-  app.on('issues.opened', async context => {
-    const issueComment = context.issue({ body: 'Thanks for opening this issue!' })
-    return context.github.issues.createComment(issueComment)
-  })
+  const saDeppy = new SaDeppy({log: bot.log});
 
-  // For more information on building apps:
-  // https://probot.github.io/docs/
+  saDeppy.executeUpdate();
 
-  // To get your app running against GitHub, see:
-  // https://probot.github.io/docs/development/
+  commands(bot, 'include', async (context, command) => {
+    await saDeppy.includeDependencies(command.arguments, context);
+  });
+
+  commands(bot, 'exclude', async (context, command) => {
+    await saDeppy.excludeDependencies(command.arguments, context);
+  });
+
+  commands(bot, 'status', async (context) => {
+    const status = await saDeppy.getStatus(context);
+    if (!status) {
+      await context.octokit.issues.createComment(context.issue({
+        body: 'Sorry, unsupported repo.'
+      }));
+      return;
+    }
+    let body = status.excludedDependencies.length ? 'Currently excluded dependencies:\n' : 'No excluded dependencies.';
+    for (let dependency of status.excludedDependencies) {
+      body += `* ${dependency.name}:${dependency.version}\n`;
+    }
+    await context.octokit.issues.createComment(context.issue({body}));
+  });
+
+  bot.on("push", async (context) => {
+    await saDeppy.onPush(context);
+  });
 }
