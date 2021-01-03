@@ -211,6 +211,28 @@ class GitOperations {
     }
     this.log.info(`Done, ${branchName} is now at ${commitSha}`);
   }
+
+  async findOpenPullRequest({sourceBranch, targetBranch}) {
+    const {data} = await this.octokit.pulls.list({
+      ...this.gitHubConfig,
+      state: 'open',
+      base: targetBranch,
+      head: `${this.owner}:${sourceBranch}`,
+    });
+    return data.length ? data[0] : null;
+  }
+
+  async createPullRequest({sourceBranch, targetBranch, title, body}) {
+    const {data} = await this.octokit.pulls.create({
+      ...this.gitHubConfig,
+      title,
+      body,
+      head: `${this.owner}:${sourceBranch}`,
+      base: targetBranch,
+      maintainer_can_modify: true
+    });
+    return data;
+  }
 }
 
 module.exports.GitOperations = GitOperations;

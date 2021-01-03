@@ -63,6 +63,7 @@ class SaDeppy {
       this.log.info(`Request to include dependencies: ${rawDependenciesList}`);
       const dependencies = parseRawDependenciesList(rawDependenciesList);
       await this.storage.includeDependencies(dependencies);
+      await this.executeUpdate();
     }
   }
 
@@ -75,6 +76,7 @@ class SaDeppy {
       this.log.info(`Request to exclude dependencies: ${rawDependenciesList}`);
       const dependencies = parseRawDependenciesList(rawDependenciesList);
       await this.storage.excludeDependencies(dependencies);
+      await this.executeUpdate();
     }
   }
 
@@ -129,6 +131,23 @@ class SaDeppy {
 
         await this.storage.setUpdatesBranchHead(updatesCommit);
         this.log.info(`Updated settings to point to ${updatesCommit}`);
+
+        const existingPullRequest = await this.gitOperations.findOpenPullRequest({
+          sourceBranch: this.config.updatesBranch,
+          targetBranch: this.config.mainBranch,
+        });
+        if (existingPullRequest) {
+          this.log.info(`Found existing pull request ${existingPullRequest.html_url}`);
+        } else {
+          this.log.info('No open pull requests found, creating new one');
+          const newPullRequest = await this.gitOperations.createPullRequest({
+            sourceBranch: this.config.updatesBranch,
+            targetBranch: this.config.mainBranch,
+            title: 'Updating dependencies',
+            body: changesDescription,
+          });
+          this.log.info(`Created pull request ${newPullRequest.html_url}`);
+        }
       }
 
       this.log.info('Update finished successfully');
