@@ -26,6 +26,11 @@ class Storage {
     await this.saveSettings();
   }
 
+  async getUpdatesBranchHead() {
+    await this.ensureSettings();
+    return this.settings.updatesBranchHead;
+  }
+
   /**
    * @param {Array<{name: string, version:String}>} dependencies
    */
@@ -75,6 +80,14 @@ class Storage {
     this.log.info(`Saved settings: ${JSON.stringify(this.settings)}`);
   }
 
+  /**
+   * @param {string} commitSha
+   */
+  async setUpdatesBranchHead(commitSha) {
+    await this.ensureSettings();
+    this.settings.updatesBranchHead = commitSha;
+    await this.saveSettings();
+  }
 }
 
 exports.Storage = Storage;

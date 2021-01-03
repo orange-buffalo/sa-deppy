@@ -4,6 +4,8 @@ const config = {
   appId: process.env.APP_ID,
   appPrivateKey: process.env.PRIVATE_KEY,
   mainBranch: 'master',
+  updatesBranch: 'dependencies-update',
+  appInstallationId: process.env.APP_INSTALLATION_ID,
 
   firebase: {
     serviceKey: Buffer.from(process.env.FIREBASE_KEY, 'base64').toString('utf-8'),
