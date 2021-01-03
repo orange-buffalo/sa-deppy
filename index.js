@@ -9,17 +9,10 @@ module.exports = (bot) => {
 
   const saDeppy = new SaDeppy({log: bot.log});
 
+  // noinspection JSIgnoredPromiseFromCall
   saDeppy.executeUpdate();
 
-  commands(bot, 'include', async (context, command) => {
-    await saDeppy.includeDependencies(command.arguments, context);
-  });
-
-  commands(bot, 'exclude', async (context, command) => {
-    await saDeppy.excludeDependencies(command.arguments, context);
-  });
-
-  commands(bot, 'status', async (context) => {
+  async function sendStatus(context) {
     const status = await saDeppy.getStatus(context);
     if (!status) {
       await context.octokit.issues.createComment(context.issue({
@@ -32,6 +25,20 @@ module.exports = (bot) => {
       body += `* ${dependency.name}:${dependency.version}\n`;
     }
     await context.octokit.issues.createComment(context.issue({body}));
+  }
+
+  commands(bot, 'include', async (context, command) => {
+    await saDeppy.includeDependencies(command.arguments, context);
+    await sendStatus(context);
+  });
+
+  commands(bot, 'exclude', async (context, command) => {
+    await saDeppy.excludeDependencies(command.arguments, context);
+    await sendStatus(context);
+  });
+
+  commands(bot, 'status', async (context) => {
+    await sendStatus(context);
   });
 
   bot.on("push", async (context) => {

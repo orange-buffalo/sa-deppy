@@ -88,6 +88,11 @@ class Storage {
     this.settings.updatesBranchHead = commitSha;
     await this.saveSettings();
   }
+
+  async getExcludedDependencies() {
+    await this.ensureSettings();
+    return this.settings.excludedDependencies;
+  }
 }
 
 exports.Storage = Storage;

@@ -48,11 +48,8 @@ class SaDeppy {
   async getStatus(context) {
     if (this.isValidRepo(context)) {
       return {
-        excludedDependencies: [{
-          name: 'org.springframework',
-          version: '1.0'
-        }]
-      }
+        excludedDependencies: await this.storage.getExcludedDependencies(),
+      };
     }
     return false;
   }
