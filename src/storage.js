@@ -89,6 +89,9 @@ class Storage {
     await this.saveSettings();
   }
 
+  /**
+   * @return {Promise<Array<{name:string, version: string}>>}
+   */
   async getExcludedDependencies() {
     await this.ensureSettings();
     return this.settings.excludedDependencies;

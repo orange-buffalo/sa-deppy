@@ -1,6 +1,7 @@
 const {GitOperations} = require('./git-operations');
 const {Storage} = require('./storage');
 const parseRawDependenciesList = require('../src/raw-dependencies-parser');
+const {NpmUpdater} = require("./npm-updater");
 
 class SaDeppy {
 
@@ -26,16 +27,8 @@ class SaDeppy {
       config: this.config
     });
 
-    // todo: replace with real implementations
     this.updaters = [
-      {
-        async executeUpdate() {
-          return {
-            title: 'Readme',
-            updated: ['something'],
-          }
-        }
-      }
+      new NpmUpdater({log}),
     ];
 
     this.log.info('Initialized SaDeppy');
@@ -102,9 +95,7 @@ class SaDeppy {
 
       if (await this.hasUnmanagedUpdatesBranch()) return;
 
-      // todo: revert to cloning
-      const localRepoDirectory = '/tmp/sa-deppy-clone-directory';
-      // const localRepoDirectory = await this.gitOperations.cloneRemoteRepo(this.config.repoCloneUrl);
+      const localRepoDirectory = await this.gitOperations.cloneRemoteRepo(this.config.repoCloneUrl);
 
       const updateResults = await this.runUpdaters(localRepoDirectory);
 
@@ -166,8 +157,9 @@ class SaDeppy {
    */
   async runUpdaters(localRepoDirectory) {
     const updateResults = [];
+    const excludedDependencies = await this.storage.getExcludedDependencies();
     for (let updater of this.updaters) {
-      const updateResult = await updater.executeUpdate(localRepoDirectory);
+      const updateResult = await updater.executeUpdate(localRepoDirectory, excludedDependencies);
       if (updateResult) {
         updateResults.push(updateResult);
       }
