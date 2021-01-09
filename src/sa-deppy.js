@@ -129,6 +129,8 @@ class SaDeppy {
         });
         if (existingPullRequest) {
           this.log.info(`Found existing pull request ${existingPullRequest.html_url}`);
+          await this.gitOperations.updatePullRequestDescription(existingPullRequest.number, changesDescription);
+          this.log.info('Pull request updated with new description');
         } else {
           this.log.info('No open pull requests found, creating new one');
           const newPullRequest = await this.gitOperations.createPullRequest({

@@ -233,6 +233,14 @@ class GitOperations {
     });
     return data;
   }
+
+  async updatePullRequestDescription(pullRequestId, changesDescription) {
+    await this.octokit.pulls.update({
+      ...this.gitHubConfig,
+      pull_number: pullRequestId,
+      body: changesDescription
+    })
+  }
 }
 
 module.exports.GitOperations = GitOperations;
