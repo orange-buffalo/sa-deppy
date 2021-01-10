@@ -56,7 +56,8 @@ class SaDeppy {
       this.log.info(`Request to include dependencies: ${rawDependenciesList}`);
       const dependencies = parseRawDependenciesList(rawDependenciesList);
       await this.storage.includeDependencies(dependencies);
-      await this.executeUpdate();
+      // noinspection ES6MissingAwait
+      this.executeUpdate();
     }
   }
 
@@ -69,7 +70,8 @@ class SaDeppy {
       this.log.info(`Request to exclude dependencies: ${rawDependenciesList}`);
       const dependencies = parseRawDependenciesList(rawDependenciesList);
       await this.storage.excludeDependencies(dependencies);
-      await this.executeUpdate();
+      // noinspection ES6MissingAwait
+      this.executeUpdate();
     }
   }
 
@@ -80,7 +82,8 @@ class SaDeppy {
     if (this.isValidRepo(context)) {
       this.log.info(`Received push event on ${context.payload.ref}`);
       if (`refs/heads/${this.config.mainBranch}` === context.payload.ref) {
-        await this.executeUpdate();
+        // noinspection ES6MissingAwait
+        this.executeUpdate();
       }
     }
   }
@@ -99,7 +102,7 @@ class SaDeppy {
 
       const updateResults = await this.runUpdaters(localRepoDirectory);
 
-      const changesDescription = this.getChangesDescription(updateResults);
+      const changesDescription = await this.getChangesDescription(updateResults);
 
       this.log.info(`Executed update with results: ${JSON.stringify(updateResults)}`);
 
@@ -172,7 +175,7 @@ class SaDeppy {
   /**
    * @private
    */
-  getChangesDescription(updateResults) {
+  async getChangesDescription(updateResults) {
     let description = 'The following dependencies have been updated:\n\n';
     for (let updateResult of updateResults) {
       description += `### ${updateResult.title}\n`;
@@ -181,6 +184,18 @@ class SaDeppy {
       }
       description += '\n';
     }
+
+    description += '\n### Exclusions\n';
+    const excludedDependencies = await this.storage.getExcludedDependencies();
+    if (excludedDependencies.length) {
+      description += 'The following dependencies excluded from update:\n'
+      for (let excludedDependency of excludedDependencies) {
+        description += `* \`${excludedDependency.name}:${excludedDependency.version}\`\n`;
+      }
+    } else {
+      description += 'Currently no dependencies are excluded from update.';
+    }
+
     return description;
   }
 

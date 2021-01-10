@@ -22,7 +22,7 @@ module.exports = (bot) => {
     }
     let body = status.excludedDependencies.length ? 'Currently excluded dependencies:\n' : 'No excluded dependencies.';
     for (let dependency of status.excludedDependencies) {
-      body += `* ${dependency.name}:${dependency.version}\n`;
+      body += `* \`${dependency.name}:${dependency.version}\`\n`;
     }
     await context.octokit.issues.createComment(context.issue({body}));
   }
