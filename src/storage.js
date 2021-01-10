@@ -13,6 +13,7 @@ class Storage {
     });
     this.log = log.child({name: "storage"});
     this.database = admin.database();
+    this.namespace = config.firebase.namespace;
 
     this.log.info('Initialized Storage');
   }
@@ -58,7 +59,7 @@ class Storage {
    */
   async ensureSettings() {
     if (!this.settings) {
-      const snapshot = await this.database.ref('settings').once('value');
+      const snapshot = await this.database.ref(`${this.namespace}/settings`).once('value');
       this.settings = snapshot.val();
 
       this.log.info(`Loaded settings: ${JSON.stringify(this.settings)}`);
@@ -76,7 +77,7 @@ class Storage {
    * @private
    */
   async saveSettings() {
-    await this.database.ref('settings').set(this.settings);
+    await this.database.ref(`${this.namespace}/settings`).set(this.settings);
     this.log.info(`Saved settings: ${JSON.stringify(this.settings)}`);
   }
 

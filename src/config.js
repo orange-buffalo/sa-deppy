@@ -10,6 +10,7 @@ const config = {
   firebase: {
     serviceKey: Buffer.from(process.env.FIREBASE_KEY, 'base64').toString('utf-8'),
     databaseURL: process.env.FIREBASE_DB_URL,
+    namespace: process.env.FIREBASE_NAMESPACE,
   }
 }
 
