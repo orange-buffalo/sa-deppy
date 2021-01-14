@@ -11,6 +11,7 @@
     "@octokit/auth-app": "^2.10.5",
     "@octokit/rest": "^18.0.12",
     "firebase-admin": "^9.4.2",
+    "got": "^11.8.1",
     "isomorphic-git": "^1.8.0",
     "npm-check-updates": "^10.2.5",
     "probot": "^11.0.1",
