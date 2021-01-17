@@ -111,7 +111,7 @@ class SaDeppy {
       this.log.info(`Executed update with results: ${JSON.stringify(updateResults)}`);
 
       if (updateResults.length) {
-        this.log.info('Updaters found some updated, will continue with a new commit');
+        this.log.info('Updaters found some updates, will continue with a new commit');
 
         const mainBranch = await this.gitOperations.findRemoteBranch(this.config.mainBranch);
         const updatesCommit = await this.gitOperations.commitDirtyFilesToRemoteRepo({
