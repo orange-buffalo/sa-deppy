@@ -1,5 +1,6 @@
 const fs = require('fs').promises;
 const got = require('got');
+const {readFileContent} = require('./utils');
 
 const DISTRIBUTION_URL_REGEX = /(distributionUrl\s*=\s*)\S*-((\d|\.)+)-(bin|all)\.zip/g;
 
@@ -34,8 +35,8 @@ class GradleWrapperUpdater {
     this.log.info(`Checking for Gradle updates in ${wrapperPropertiesFile}`);
 
     try {
-      let wrapperPropertiesContent = (await fs.readFile(wrapperPropertiesFile)).toString();
-      const distributionUrlMatch = DISTRIBUTION_URL_REGEX.exec(wrapperPropertiesContent);
+      let wrapperPropertiesContent = await readFileContent(wrapperPropertiesFile);
+      const distributionUrlMatch = wrapperPropertiesContent.matchAll(DISTRIBUTION_URL_REGEX).next().value;
       if (distributionUrlMatch) {
         const currentVersion = distributionUrlMatch[2];
         this.log.info(`Current version is ${currentVersion}, requesting for available updates`);

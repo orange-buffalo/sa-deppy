@@ -2,6 +2,7 @@ const ncu = require('npm-check-updates');
 const fs = require('fs').promises;
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
+const {readFileContent} = require('./utils');
 
 function escapeRegex(string) {
   return string.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
@@ -26,7 +27,7 @@ class NpmUpdater {
 
     const packageFile = `${workingDirectory}/package.json`;
     const packageLockFile = `${workingDirectory}/package-lock.json`;
-    const previousPackageJson = excludedDependencies.length && JSON.parse((await fs.readFile(packageFile)).toString());
+    const previousPackageJson = excludedDependencies.length && JSON.parse(await readFileContent(packageFile));
 
     const updatesList = [];
 
@@ -37,7 +38,7 @@ class NpmUpdater {
         upgrade: true,
       });
 
-      let updatedPackageJson = excludedDependencies.length && (await fs.readFile(packageFile)).toString();
+      let updatedPackageJson = excludedDependencies.length && (await readFileContent(packageFile));
 
       for (let packageName of Object.keys(ncuState)) {
         const packageVersion = ncuState[packageName];
@@ -60,7 +61,7 @@ class NpmUpdater {
         await fs.writeFile(packageFile, updatedPackageJson);
       }
 
-      const previousPackageLock = !updatesList.length && (await fs.readFile(packageLockFile)).toString();
+      const previousPackageLock = !updatesList.length && (await readFileContent(packageLockFile));
 
       this.log.info(`Installing updates`);
       const {stdout: npmInstallStdout, stderr: npmInstallStderr} = await exec('npm install --package-lock-only', {
@@ -75,7 +76,7 @@ class NpmUpdater {
       this.log.info(`Audit finished with result:\n ${npmAuditStdout.toString()}\n${npmAuditStderr.toString()}`);
 
       if (!updatesList.length) {
-        const newPackageLock = (await fs.readFile(packageLockFile)).toString();
+        const newPackageLock = await readFileContent(packageLockFile);
         if (newPackageLock !== previousPackageLock) {
           this.log.info('New peer dependencies installed');
           updatesList.push('Updated peer dependencies');
