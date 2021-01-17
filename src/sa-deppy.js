@@ -1,6 +1,7 @@
 const {GitOperations} = require('./git-operations');
 const {Storage} = require('./storage');
 const parseRawDependenciesList = require('../src/raw-dependencies-parser');
+const {GradleUpdater} = require("./gradle-updater");
 const {GradleWrapperUpdater} = require("./gradle-wrapper-updater");
 const {NpmUpdater} = require("./npm-updater");
 
@@ -31,6 +32,7 @@ class SaDeppy {
     this.updaters = [
       new NpmUpdater({log}),
       new GradleWrapperUpdater({log}),
+      new GradleUpdater({log}),
     ];
 
     this.log.info('Initialized SaDeppy');

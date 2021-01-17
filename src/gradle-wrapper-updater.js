@@ -27,7 +27,7 @@ class GradleWrapperUpdater {
 
   /**
    * @param {string} localRepoDirectory
-   * @param {Array<{name:string, version:string}>}excludedDependencies
+   * @param {Array<{name:string, version:string}>} excludedDependencies
    */
   async executeUpdate(localRepoDirectory, excludedDependencies) {
     const wrapperPropertiesFile = `${localRepoDirectory}/gradle/wrapper/gradle-wrapper.properties`;

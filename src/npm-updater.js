@@ -18,7 +18,7 @@ class NpmUpdater {
 
   /**
    * @param {string} localRepoDirectory
-   * @param {Array<{name:string, version:string}>}excludedDependencies
+   * @param {Array<{name:string, version:string}>} excludedDependencies
    */
   async executeUpdate(localRepoDirectory, excludedDependencies) {
     const workingDirectory = `${localRepoDirectory}/frontend`;
