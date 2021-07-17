@@ -68,6 +68,20 @@ class SaDeppy {
   }
 
   /**
+   * @param {string} rawDependenciesRegexesList
+   * @param {import('probot').Context} context
+   */
+  async includeDependenciesByRegexes(rawDependenciesRegexesList, context) {
+    if (this.isValidRepo(context)) {
+      this.log.info(`Request to include dependencies by regex: ${rawDependenciesRegexesList}`);
+      const dependencies = parseRawDependenciesList(rawDependenciesRegexesList);
+      await this.storage.includeDependenciesByRegexes(dependencies);
+      // noinspection ES6MissingAwait
+      this.executeUpdate();
+    }
+  }
+
+  /**
    * @param {string} rawDependenciesList
    * @param {import('probot').Context} context
    */

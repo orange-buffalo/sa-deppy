@@ -27,6 +27,15 @@ class Storage {
     await this.saveSettings();
   }
 
+  async includeDependenciesByRegexes(dependencies) {
+    await this.ensureSettings();
+    for (let dependencyToInclude of dependencies) {
+      this.settings.excludedDependenciesRegexes = this.settings.excludedDependenciesRegexes.filter(existingDependency =>
+        !this.isSameDependency(existingDependency, dependencyToInclude))
+    }
+    await this.saveSettings();
+  }
+
   async getUpdatesBranchHead() {
     await this.ensureSettings();
     return this.settings.updatesBranchHead;

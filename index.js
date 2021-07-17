@@ -37,6 +37,11 @@ module.exports = (bot) => {
     await sendStatus(context);
   });
 
+  commands(bot, 'includeregex', async (context, command) => {
+    await saDeppy.includeDependenciesByRegexes(command.arguments, context);
+    await sendStatus(context);
+  });
+
   commands(bot, 'exclude', async (context, command) => {
     await saDeppy.excludeDependencies(command.arguments, context);
     await sendStatus(context);
