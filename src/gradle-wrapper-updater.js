@@ -28,9 +28,9 @@ class GradleWrapperUpdater {
 
   /**
    * @param {string} localRepoDirectory
-   * @param {Array<{name:string, version:string}>} excludedDependencies
+   * @param {import('./exclude-strategy').ExcludeStrategy} excludeStrategy
    */
-  async executeUpdate(localRepoDirectory, excludedDependencies) {
+  async executeUpdate(localRepoDirectory, excludeStrategy) {
     const wrapperPropertiesFile = `${localRepoDirectory}/gradle/wrapper/gradle-wrapper.properties`;
     this.log.info(`Checking for Gradle updates in ${wrapperPropertiesFile}`);
 
@@ -40,11 +40,6 @@ class GradleWrapperUpdater {
       if (distributionUrlMatch) {
         const currentVersion = distributionUrlMatch[2];
         this.log.info(`Current version is ${currentVersion}, requesting for available updates`);
-
-        const excludedVersions = excludedDependencies
-          .filter(it => it.name === 'gradle')
-          .map(it => it.version);
-        this.log.info(`Excluded versions are ${JSON.stringify(excludedDependencies)}`);
 
         const {body: allGradleVersions} = await got.get('https://services.gradle.org/versions/all', {
           responseType: 'json'
@@ -56,7 +51,7 @@ class GradleWrapperUpdater {
           .filter(it => !it.releaseNightly)
           .filter(it => !it.rcFor)
           .filter(it => !it.milestoneFor)
-          .filter(it => excludedVersions.indexOf(it.version) < 0)
+          .filter(it => !excludeStrategy.isExcluded('gradle', it.version))
           .map(it => ({
             version: it.version,
             buildTime: formatBuildTime(it.buildTime)

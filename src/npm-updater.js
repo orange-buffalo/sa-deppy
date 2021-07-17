@@ -19,15 +19,15 @@ class NpmUpdater {
 
   /**
    * @param {string} localRepoDirectory
-   * @param {Array<{name:string, version:string}>} excludedDependencies
+   * @param {import('./exclude-strategy').ExcludeStrategy} excludeStrategy
    */
-  async executeUpdate(localRepoDirectory, excludedDependencies) {
+  async executeUpdate(localRepoDirectory, excludeStrategy) {
     const workingDirectory = `${localRepoDirectory}/frontend`;
     this.log.info(`Will check for updates in ${workingDirectory}`);
 
     const packageFile = `${workingDirectory}/package.json`;
     const packageLockFile = `${workingDirectory}/package-lock.json`;
-    const previousPackageJson = excludedDependencies.length && JSON.parse(await readFileContent(packageFile));
+    const previousPackageJson = excludeStrategy.hasExcludes() && JSON.parse(await readFileContent(packageFile));
 
     const updatesList = [];
 
@@ -38,11 +38,11 @@ class NpmUpdater {
         upgrade: true,
       });
 
-      let updatedPackageJson = excludedDependencies.length && (await readFileContent(packageFile));
+      let updatedPackageJson = excludeStrategy.hasExcludes() && (await readFileContent(packageFile));
 
       for (let packageName of Object.keys(ncuState)) {
         const packageVersion = ncuState[packageName];
-        const shouldBeExcluded = excludedDependencies.some(it => it.name === packageName && it.version === packageVersion);
+        const shouldBeExcluded = excludeStrategy.isExcluded(packageName, packageVersion);
         if (shouldBeExcluded) {
           const previousPackageVersion = previousPackageJson.dependencies[packageName]
             || previousPackageJson.devDependencies[packageName];
@@ -56,7 +56,7 @@ class NpmUpdater {
       }
       this.log.info(`Found updates: ${JSON.stringify(updatesList)}`);
 
-      if (excludedDependencies.length) {
+      if (excludeStrategy.hasExcludes()) {
         this.log.info(`package.json should be updated due to exclusions`);
         await fs.writeFile(packageFile, updatedPackageJson);
       }

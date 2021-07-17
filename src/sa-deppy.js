@@ -1,6 +1,7 @@
 const {GitOperations} = require('./git-operations');
 const {Storage} = require('./storage');
 const parseRawDependenciesList = require('../src/raw-dependencies-parser');
+const {ExcludeStrategy} = require("./exclude-strategy");
 const {GradleUpdater} = require("./gradle-updater");
 const {GradleWrapperUpdater} = require("./gradle-wrapper-updater");
 const {NpmUpdater} = require("./npm-updater");
@@ -40,12 +41,13 @@ class SaDeppy {
 
   /**
    * @param {import('probot').Context} context
-   * @returns {Promise<boolean|{excludedDependencies: [{name: string, version: string}]}>}
+   * @returns {Promise<boolean|{excludedDependencies: [{name: string, version: string}],excludedDependenciesRegexes: [{name: string, version: string}]}>}
    */
   async getStatus(context) {
     if (this.isValidRepo(context)) {
       return {
         excludedDependencies: await this.storage.getExcludedDependencies(),
+        excludedDependenciesRegexes: await this.storage.getExcludedDependenciesRegexes(),
       };
     }
     return false;
@@ -80,14 +82,45 @@ class SaDeppy {
   }
 
   /**
+   * @param {string} rawDependenciesRegexes
+   * @param {import('probot').Context} context
+   */
+  async excludeDependenciesByRegex(rawDependenciesRegexes, context) {
+    if (this.isValidRepo(context)) {
+      this.log.info(`Request to exclude dependencies by regex: ${rawDependenciesRegexes}`);
+      const dependencies = parseRawDependenciesList(rawDependenciesRegexes);
+      await this.storage.excludeDependenciesByRegex(dependencies);
+      // noinspection ES6MissingAwait
+      this.executeUpdate();
+    }
+  }
+
+  async clearExcludedDependencies(context) {
+    if (this.isValidRepo(context)) {
+      this.log.info(`Request to clear excluded dependencies`);
+      await this.storage.clearExcludedDependencies();
+      // noinspection ES6MissingAwait
+      this.executeUpdate();
+    }
+  }
+
+  async clearExcludedDependenciesRegexes(context) {
+    if (this.isValidRepo(context)) {
+      this.log.info(`Request to clear excluded dependencies regexes`);
+      await this.storage.clearExcludedDependenciesRegexes();
+      // noinspection ES6MissingAwait
+      this.executeUpdate();
+    }
+  }
+
+  /**
    * @param {import('probot').Context<import('@octokit/webhooks').WebhookPayloadPush>} context
    */
   async onPush(context) {
     if (this.isValidRepo(context)) {
       this.log.info(`Received push event on ${context.payload.ref}`);
       if (`refs/heads/${this.config.mainBranch}` === context.payload.ref) {
-        // noinspection ES6MissingAwait
-        this.executeUpdate();
+        setTimeout(() => this.executeUpdate(), 5 * 60 * 1000);
       }
     }
   }
@@ -166,9 +199,10 @@ class SaDeppy {
    */
   async runUpdaters(localRepoDirectory) {
     const updateResults = [];
-    const excludedDependencies = await this.storage.getExcludedDependencies();
+    const excludeStrategy = new ExcludeStrategy();
+    await excludeStrategy.init(this.storage);
     for (let updater of this.updaters) {
-      const updateResult = await updater.executeUpdate(localRepoDirectory, excludedDependencies);
+      const updateResult = await updater.executeUpdate(localRepoDirectory, excludeStrategy);
       if (updateResult) {
         updateResults.push(updateResult);
       }
@@ -194,6 +228,17 @@ class SaDeppy {
     if (excludedDependencies.length) {
       description += 'The following dependencies excluded from update:\n'
       for (let excludedDependency of excludedDependencies) {
+        description += `* \`${excludedDependency.name}:${excludedDependency.version}\`\n`;
+      }
+    } else {
+      description += 'Currently no dependencies are excluded from update.';
+    }
+
+    description += '\n### Exclusions by regex\n';
+    const excludedDependenciesRegexes = await this.storage.getExcludedDependenciesRegexes();
+    if (excludedDependenciesRegexes.length) {
+      description += 'The following dependencies excluded from update (regex):\n'
+      for (let excludedDependency of excludedDependenciesRegexes) {
         description += `* \`${excludedDependency.name}:${excludedDependency.version}\`\n`;
       }
     } else {

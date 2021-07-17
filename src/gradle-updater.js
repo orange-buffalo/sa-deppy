@@ -25,7 +25,7 @@ const {DOMParser} = require('xmldom');
 
 /**
  * @typedef UpdateContext
- * @property {Array<{name:string, version:string}>} excludedDependencies
+ * @property {import('./exclude-strategy').ExcludeStrategy} excludeStrategy
  * @property {Array<string>} updatesList
  * @property {string} versionsDefinitionsFileContent
  */
@@ -45,16 +45,16 @@ class GradleUpdater {
 
   /**
    * @param {string} localRepoDirectory
-   * @param {Array<{name:string, version:string}>} excludedDependencies
+   * @param {import('./exclude-strategy').ExcludeStrategy} excludeStrategy
    */
-  async executeUpdate(localRepoDirectory, excludedDependencies) {
+  async executeUpdate(localRepoDirectory, excludeStrategy) {
     this.log.info(`Checking for gradle dependencies updates..`);
 
     const updatesList = [];
 
     try {
-      await this.checkForBuildSrcUpdates(localRepoDirectory, excludedDependencies, updatesList);
-      await this.checkForDependenciesUpdates(localRepoDirectory, excludedDependencies, updatesList);
+      await this.checkForBuildSrcUpdates(localRepoDirectory, excludeStrategy, updatesList);
+      await this.checkForDependenciesUpdates(localRepoDirectory, excludeStrategy, updatesList);
 
       this.log.info(`Found updates: ${JSON.stringify(updatesList)}`);
       if (updatesList.length) {
@@ -72,26 +72,26 @@ class GradleUpdater {
 
   /**
    * @param {string} localRepoDirectory
-   * @param {Array<{name:string, version:string}>} excludedDependencies
+   * @param {import('./exclude-strategy').ExcludeStrategy} excludeStrategy
    * @param {Array<string>} updatesList
    * @private
    */
-  async checkForBuildSrcUpdates(localRepoDirectory, excludedDependencies, updatesList) {
+  async checkForBuildSrcUpdates(localRepoDirectory, excludeStrategy, updatesList) {
     const buildKtsPath = `${localRepoDirectory}/buildSrc/build.gradle.kts`;
     this.log.info(`Will check updates for build src script ${buildKtsPath}`);
     const buildKtsContent = await readFileContent(buildKtsPath);
     const dependenciesDefinitions = this.extractDependenciesDefinitions(buildKtsContent);
-    await this.updateDependenciesAndPlugins(buildKtsPath, excludedDependencies, updatesList, dependenciesDefinitions, []);
+    await this.updateDependenciesAndPlugins(buildKtsPath, excludeStrategy, updatesList, dependenciesDefinitions, []);
     this.log.info(`Build src script dependencies updated`);
   }
 
   /**
    * @param {string} localRepoDirectory
-   * @param {Array<{name:string, version:string}>} excludedDependencies
+   * @param {import('./exclude-strategy').ExcludeStrategy} excludeStrategy
    * @param {Array<string>} updatesList
    * @private
    */
-  async checkForDependenciesUpdates(localRepoDirectory, excludedDependencies, updatesList) {
+  async checkForDependenciesUpdates(localRepoDirectory, excludeStrategy, updatesList) {
     const gradleBuildPaths = [
       `${localRepoDirectory}/build.gradle.kts`,
       `${localRepoDirectory}/frontend/build.gradle.kts`,
@@ -113,7 +113,7 @@ class GradleUpdater {
     const dependenciesVersionsPath = `${localRepoDirectory}/buildSrc/src/main/kotlin/Dependencies.kt`;
     await this.updateDependenciesAndPlugins(
       dependenciesVersionsPath,
-      excludedDependencies,
+      excludeStrategy,
       updatesList,
       dependenciesDefinitions,
       pluginsDefinitions);
@@ -122,7 +122,7 @@ class GradleUpdater {
 
   /**
    * @param {string} versionsFilePath
-   * @param {Array<{name:string, version:string}>} excludedDependencies
+   * @param {import('./exclude-strategy').ExcludeStrategy} excludeStrategy
    * @param {Array<string>} updatesList
    * @param {Array<Array<DependencyDefinition>>} dependenciesDefinitions
    * @param {Array<Array<PluginDefinition>>} pluginsDefinitions
@@ -130,7 +130,7 @@ class GradleUpdater {
    */
   async updateDependenciesAndPlugins(
     versionsFilePath,
-    excludedDependencies,
+    excludeStrategy,
     updatesList,
     dependenciesDefinitions,
     pluginsDefinitions
@@ -144,7 +144,7 @@ class GradleUpdater {
      * @type {UpdateContext}
      */
     const updateContext = {
-      excludedDependencies,
+      excludeStrategy,
       updatesList,
       versionsDefinitionsFileContent,
     }
@@ -297,7 +297,7 @@ class GradleUpdater {
       this.log.info(`Newer version candidate for this artifact is ${newerVersionCandidate}`);
 
       if (newerVersionCandidate !== versionDefinition.currentVersion) {
-        if (this.isExcluded(versionDefinition.definitionKey, newerVersionCandidate, updateContext.excludedDependencies)) {
+        if (updateContext.excludeStrategy.isExcluded(versionDefinition.definitionKey, newerVersionCandidate)) {
           this.log.info(`Skipping this version as it is excluded`);
         } else {
           const updatedVersionDefinitionString = versionDefinition.definitionString
@@ -320,17 +320,6 @@ class GradleUpdater {
       }
     }
     return latestVersions.length !== 0;
-  }
-
-  /**
-   * @param {string} key
-   * @param {string} version
-   * @param {Array<{name:string, version:string}>} excludedDependencies
-   * @private
-   */
-  isExcluded(key, version, excludedDependencies) {
-    return excludedDependencies.some(excludedDependency =>
-      excludedDependency.name === key && excludedDependency.version === version);
   }
 
   /**

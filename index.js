@@ -24,6 +24,11 @@ module.exports = (bot) => {
     for (let dependency of status.excludedDependencies) {
       body += `* \`${dependency.name}:${dependency.version}\`\n`;
     }
+    body += status.excludedDependenciesRegexes.length
+      ? '\n\nCurrently excluded dependencies by regex:\n' : '\n\nNo excluded dependencies by regex.';
+    for (let dependency of status.excludedDependenciesRegexes) {
+      body += `* \`${dependency.name}:${dependency.version}\`\n`;
+    }
     await context.octokit.issues.createComment(context.issue({body}));
   }
 
@@ -34,6 +39,21 @@ module.exports = (bot) => {
 
   commands(bot, 'exclude', async (context, command) => {
     await saDeppy.excludeDependencies(command.arguments, context);
+    await sendStatus(context);
+  });
+
+  commands(bot, 'excluderegex', async (context, command) => {
+    await saDeppy.excludeDependenciesByRegex(command.arguments, context);
+    await sendStatus(context);
+  });
+
+  commands(bot, 'clearexcluded', async (context) => {
+    await saDeppy.clearExcludedDependencies(context);
+    await sendStatus(context);
+  });
+
+  commands(bot, 'clearregex', async (context) => {
+    await saDeppy.clearExcludedDependenciesRegexes(context);
     await sendStatus(context);
   });
 

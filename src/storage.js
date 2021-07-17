@@ -48,6 +48,33 @@ class Storage {
   }
 
   /**
+   * @param {Array<{name: string, version:String}>} dependenciesRegexes
+   */
+  async excludeDependenciesByRegex(dependenciesRegexes) {
+    await this.ensureSettings();
+    for (let dependencyToExclude of dependenciesRegexes) {
+      const alreadyExcluded = this.settings.excludedDependenciesRegexes.some(existingDependencyRegex =>
+        this.isSameDependency(existingDependencyRegex, dependencyToExclude));
+      if (!alreadyExcluded) {
+        this.settings.excludedDependenciesRegexes.push(dependencyToExclude);
+      }
+    }
+    await this.saveSettings();
+  }
+
+  async clearExcludedDependencies() {
+    await this.ensureSettings();
+    this.settings.excludedDependencies = [];
+    await this.saveSettings();
+  }
+
+  async clearExcludedDependenciesRegexes() {
+    await this.ensureSettings();
+    this.settings.excludedDependenciesRegexes = [];
+    await this.saveSettings();
+  }
+
+  /**
    * @private
    */
   isSameDependency(source, target) {
@@ -69,6 +96,9 @@ class Storage {
       }
       if (!this.settings.excludedDependencies) {
         this.settings.excludedDependencies = [];
+      }
+      if (!this.settings.excludedDependenciesRegexes) {
+        this.settings.excludedDependenciesRegexes = [];
       }
     }
   }
@@ -96,6 +126,14 @@ class Storage {
   async getExcludedDependencies() {
     await this.ensureSettings();
     return this.settings.excludedDependencies;
+  }
+
+  /**
+   * @return {Promise<Array<{name:string, version: string}>>}
+   */
+  async getExcludedDependenciesRegexes() {
+    await this.ensureSettings();
+    return this.settings.excludedDependenciesRegexes;
   }
 }
 
