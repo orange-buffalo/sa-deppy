@@ -1,5 +1,6 @@
 const {SaDeppy} = require('./src/sa-deppy');
 const commands = require('probot-commands');
+const CronJob = require('cron').CronJob;
 
 /**
  * @param {import('probot').Probot} bot
@@ -9,6 +10,16 @@ module.exports = (bot) => {
 
   const saDeppy = new SaDeppy({log: bot.log});
 
+  new CronJob(
+    '0 6 * * FRI',
+    function () {
+      // noinspection JSIgnoredPromiseFromCall
+      saDeppy.executeUpdate();
+    },
+    null,
+    true,
+    'Australia/Melbourne'
+  );
   // noinspection JSIgnoredPromiseFromCall
   saDeppy.executeUpdate();
 
