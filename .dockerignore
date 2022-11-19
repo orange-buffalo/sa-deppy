@@ -1,8 +1,12 @@
 node_modules
 npm-debug.log
 *.pem
-!mock-cert.pem
 *.env
 coverage
 .idea
 .local
+.git
+Dockerfile
+test
+.dockerignore
+.gitignore

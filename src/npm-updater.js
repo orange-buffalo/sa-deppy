@@ -64,13 +64,13 @@ class NpmUpdater {
       const previousPackageLock = !updatesList.length && (await readFileContent(packageLockFile));
 
       this.log.info(`Installing updates`);
-      const {stdout: npmInstallStdout, stderr: npmInstallStderr} = await exec('npm install --package-lock-only', {
+      const {stdout: npmInstallStdout, stderr: npmInstallStderr} = await exec('npm install --package-lock-only --ignore-scripts', {
         cwd: workingDirectory
       });
       this.log.info(`Updates installed with result:\n ${npmInstallStdout.toString()}\n${npmInstallStderr.toString()}`);
 
       this.log.info('Running audit fix');
-      const {stdout: npmAuditStdout, stderr: npmAuditStderr} = await exec('npm audit fix --package-lock-only', {
+      const {stdout: npmAuditStdout, stderr: npmAuditStderr} = await exec('npm audit fix --package-lock-only --audit-level=none', {
         cwd: workingDirectory
       });
       this.log.info(`Audit finished with result:\n ${npmAuditStdout.toString()}\n${npmAuditStderr.toString()}`);
