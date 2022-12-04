@@ -8,13 +8,13 @@ function escapeRegex(string) {
   return string.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
 }
 
-class NpmUpdater {
+class FrontendUpdater {
 
   /**
    * @param {import('pino').BaseLogger} log
    */
   constructor({log}) {
-    this.log = log.child({name: 'npm-updater'});
+    this.log = log.child({name: 'frontend-updater'});
   }
 
   /**
@@ -26,7 +26,7 @@ class NpmUpdater {
     this.log.info(`Will check for updates in ${workingDirectory}`);
 
     const packageFile = `${workingDirectory}/package.json`;
-    const packageLockFile = `${workingDirectory}/package-lock.json`;
+    const yarnLockFile = `${workingDirectory}/yarn.lock`;
     const previousPackageJson = excludeStrategy.hasExcludes() && JSON.parse(await readFileContent(packageFile));
 
     const updatesList = [];
@@ -61,23 +61,17 @@ class NpmUpdater {
         await fs.writeFile(packageFile, updatedPackageJson);
       }
 
-      const previousPackageLock = !updatesList.length && (await readFileContent(packageLockFile));
+      const previousYarnLock = !updatesList.length && (await readFileContent(yarnLockFile));
 
       this.log.info(`Installing updates`);
-      const {stdout: npmInstallStdout, stderr: npmInstallStderr} = await exec('npm install --package-lock-only --ignore-scripts', {
+      const {stdout: yarnInstallStdout, stderr: yarnInstallStderr} = await exec('yarn install --mode=update-lockfile', {
         cwd: workingDirectory
       });
-      this.log.info(`Updates installed with result:\n ${npmInstallStdout.toString()}\n${npmInstallStderr.toString()}`);
-
-      this.log.info('Running audit fix');
-      const {stdout: npmAuditStdout, stderr: npmAuditStderr} = await exec('npm audit fix --package-lock-only --audit-level=none', {
-        cwd: workingDirectory
-      });
-      this.log.info(`Audit finished with result:\n ${npmAuditStdout.toString()}\n${npmAuditStderr.toString()}`);
+      this.log.info(`Updates installed with result:\n ${yarnInstallStdout.toString()}\n${yarnInstallStderr.toString()}`);
 
       if (!updatesList.length) {
-        const newPackageLock = await readFileContent(packageLockFile);
-        if (newPackageLock !== previousPackageLock) {
+        const newPackageLock = await readFileContent(yarnLockFile);
+        if (newPackageLock !== previousYarnLock) {
           this.log.info('New peer dependencies installed');
           updatesList.push('Updated peer dependencies');
         }
@@ -98,4 +92,4 @@ class NpmUpdater {
   }
 }
 
-exports.NpmUpdater = NpmUpdater;
+exports.FrontendUpdater = FrontendUpdater;

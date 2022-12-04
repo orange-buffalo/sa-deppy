@@ -4,7 +4,7 @@ const parseRawDependenciesList = require('../src/raw-dependencies-parser');
 const {ExcludeStrategy} = require("./exclude-strategy");
 const {GradleUpdater} = require("./gradle-updater");
 const {GradleWrapperUpdater} = require("./gradle-wrapper-updater");
-const {NpmUpdater} = require("./npm-updater");
+const {FrontendUpdater} = require("./frontend-updater");
 
 class SaDeppy {
 
@@ -31,7 +31,7 @@ class SaDeppy {
     });
 
     this.updaters = [
-      new NpmUpdater({log}),
+      new FrontendUpdater({log}),
       new GradleWrapperUpdater({log}),
       new GradleUpdater({log}),
     ];

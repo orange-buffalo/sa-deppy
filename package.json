@@ -15,7 +15,7 @@
     "got": "^11.8.1",
     "isomorphic-git": "^1.8.0",
     "lodash.merge": "^4.6.2",
-    "npm-check-updates": "^16.4.1",
+    "npm-check-updates": "^16.4.3",
     "probot": "^11.0.3",
     "probot-commands": "^1.1.0",
     "rimraf": "^3.0.2",
